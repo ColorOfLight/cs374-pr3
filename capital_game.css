@@ -1,0 +1,46 @@
+body {
+    background-color: #eee;
+    font-family: "Roboto", sans-serif;
+    text-align: left;
+}
+
+main {
+    margin: 0 auto;
+    width: 800px;
+}
+
+h1 {
+    font-size: 32px;
+    font-weight: 800;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 5px;
+}
+
+th {
+    border-bottom: 2px solid #999;
+    font-weight: 700;
+}
+
+td {
+    border-bottom: 1px solid #bdbdbd;
+    font-weight: 400;
+}
+
+.correct {
+    color: blue;
+}
+
+.incorrect {
+    color: red;
+}
+
+.incorrect .capital {
+    text-decoration: line-through;
+}
