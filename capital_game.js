@@ -1,11 +1,31 @@
 // This allows the Javascript code inside this block to only run when the page
 // has finished loading in the browser.
 
+//= Global Varaibles
 var ANSWER = null;
 var HISTORY = [];
 var HISTORY_TYPE = "all";
 var INDEX = 0;
 
+//= Get csv file and extract it into JS Object
+try {
+  console.log("CSV file is on loading...")
+  $.ajax({
+    url: "https://s3.ap-northeast-2.amazonaws.com/cs374-csv/country_capital_pairs.csv",
+    success: function (data, status, xhr) {
+      window.pairs = convertCSVtoObject(data);
+      console.log("CSV file is loaded!")
+    },
+    error: function(xhr, ajaxOptions, error) {
+      alert("Failed to read csv. Please try again later or ask to developer.");
+    }
+  });
+} catch (e) {
+  console.error(e.message);
+}
+
+
+//= Run code when document is ready
 $(document).ready(function() {
   var country_capital_pairs = pairs;
   var $questionColumn = $("#pr2__question");
@@ -54,6 +74,7 @@ $(document).ready(function() {
   });
 });
 
+//= Functions
 function checkAnswer(input) {
   var isCorrect = input === ANSWER.capital;
 
@@ -155,4 +176,25 @@ function changeHistoryType(type) {
       );
     }
   }
+}
+
+function convertCSVtoObject(csvData) {
+  var rows = csvData.split('\n');
+  if (!rows || rows.length < 0) {
+    throw new Error("convertCSVtoObject: input data may be not CSV data!");
+  }
+  var result = [];
+  var keys = rows[0].split(',');
+  for (var i = 1; i < rows.length; i++) {
+    var item = {};
+    var columns = rows[i].split(',');
+    if (keys.length !== columns.length) {
+      throw new Error("convertCSVtoObject: length of rows and length of keys are different!")
+    }
+    for (var keyIndex = 0; keyIndex < keys.length; keyIndex++) {
+      item[keys[keyIndex]] = columns[keyIndex]
+    }
+    result.push(item);
+  }
+  return result;
 }
