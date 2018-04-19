@@ -15,6 +15,7 @@ try {
     success: function (data, status, xhr) {
       window.pairs = convertCSVtoObject(data);
       console.log("CSV file is loaded!")
+      initFuncs();
     },
     error: function(xhr, ajaxOptions, error) {
       alert("Failed to read csv. Please try again later or ask to developer.");
@@ -26,53 +27,47 @@ try {
 
 
 //= Run code when document is ready
-$(document).ready(function() {
-  var country_capital_pairs = pairs;
-  var $questionColumn = $("#pr2__question");
-  var $answerInput = $("#pr2__answer");
-  var $submitButton = $("#pr2__submit");
+function initFuncs() {
+  $(document).ready(function() {
+    var country_capital_pairs = window.pairs;
+    var $questionColumn = $("#pr2__question");
+    var $answerInput = $("#pr2__answer");
+    var $submitButton = $("#pr2__submit");
 
-  resetInputRow();
+    resetInputRow();
 
-  $answerInput.autocomplete({
-    source: function(request, response) {
-      var capitals = pairs.map(function(obj) {
-        return obj.capital;
-      });
-      var matcher = new RegExp(
-        $.ui.autocomplete.escapeRegex(request.term),
-        "i"
-      );
-      response(
-        $.grep(capitals, function(value) {
-          value = value.label || value.value || value;
-          return matcher.test(value);
-        })
-      );
-    },
-    minLength: 2
+    $answerInput.autocomplete({ source: function(request, response) {
+        var capitals = pairs.map(function(obj) {
+          return obj.capital;
+        });
+        var matcher = new RegExp($.ui.autocomplete.escapeRegex(request.term), "i");
+        response($.grep(capitals, function(value) {
+            value = value.label || value.value || value;
+            return matcher.test(value);
+          }));
+      }, minLength: 2 });
+
+    $submitButton.on("click", function(evt) {
+      var inputText = $answerInput.val();
+      if (inputText !== "") {
+        checkAnswer(inputText);
+      }
+    });
+
+    $answerInput.on("autocompleteselect", function(evt, ui) {
+      var input = (ui.item && ui.item.value) || ui.item.label;
+      checkAnswer(input);
+      return false;
+    });
+
+    $("#radioRow input[type='radio']").on("click", function(evt) {
+      var type = $(this).val();
+      if (HISTORY_TYPE !== type) {
+        changeHistoryType(type);
+      }
+    });
   });
-
-  $submitButton.on("click", function(evt) {
-    var inputText = $answerInput.val();
-    if (inputText !== "") {
-      checkAnswer(inputText);
-    }
-  });
-
-  $answerInput.on("autocompleteselect", function(evt, ui) {
-    var input = (ui.item && ui.item.value) || ui.item.label;
-    checkAnswer(input);
-    return false;
-  });
-
-  $("#radioRow input[type='radio']").on("click", function(evt) {
-    var type = $(this).val();
-    if (HISTORY_TYPE !== type) {
-      changeHistoryType(type);
-    }
-  });
-});
+}
 
 //= Functions
 function checkAnswer(input) {
