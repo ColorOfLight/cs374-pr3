@@ -183,6 +183,7 @@ function convertCSVtoObject(csvData) {
   if (!rows || rows.length < 0) {
     throw new Error("convertCSVtoObject: input data may be not CSV data!");
   }
+  rows = rows.map(function(obj) { return obj.trim() })
   var result = [];
   var keys = rows[0].split(',');
   for (var i = 1; i < rows.length; i++) {
