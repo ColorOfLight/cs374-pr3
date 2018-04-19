@@ -116,6 +116,7 @@ function insertAnswerDOM(input, answer, isCorrect) {
       for (var x = 0; x < HISTORY.length; x++) {
         if (HISTORY[x].id === $(this).data("id")) {
           $(element).remove();
+          HISTORY.splice(x, 1);
         }
       }
     });
