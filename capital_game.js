@@ -15,6 +15,7 @@ try {
     success: function (data, status, xhr) {
       window.pairs = convertCSVtoObject(data);
       console.log("CSV file is loaded!")
+      initFirebase();
       initFuncs();
     },
     error: function(xhr, ajaxOptions, error) {
@@ -25,6 +26,26 @@ try {
   console.error(e.message);
 }
 
+function initFirebase() {
+  // Firebase Database setup
+  var database = firebase.database();
+
+  var historyRef = database.ref('history');
+
+  historyRef.once("value").then(function(snapshot) {
+    Object.keys(HISTORY).forEach(function(key) {
+      var historyItem = HISTORY[key];
+      if (!historyItem.isDeleted) {
+        insertAnswerDOM(historyItem.input, historyItem.answer, historyItem.isCorrect, key);
+      }
+    });
+  });
+
+  historyRef.on('value', function (snapshot) {
+    var historyObject = snapshot.val()
+    HISTORY = historyObject;
+  });
+}
 
 //= Run code when document is ready
 function initFuncs() {
@@ -66,6 +87,10 @@ function initFuncs() {
         changeHistoryType(type);
       }
     });
+
+    $questionColumn.on("click", function(evt) {
+      replaceMapQuery($(evt.currentTarget).text());
+    });
   });
 }
 
@@ -79,13 +104,14 @@ function checkAnswer(input) {
     $("#radioRow input[value='all']").click();
   }
 
-  HISTORY.push({
-    id: INDEX,
+  var historyItem = {
     answer: ANSWER,
     input: input,
-    isCorrect: isCorrect
-  });
-  insertAnswerDOM(input, ANSWER, isCorrect);
+    isCorrect: isCorrect,
+    isDeleted: false
+  }
+  var newPostKey = firebase.database().ref().child('history').push(historyItem).key;
+  insertAnswerDOM(input, ANSWER, isCorrect, newPostKey);
 
   resetInputRow();
 }
@@ -101,13 +127,16 @@ function resetInputRow() {
   $questionColumn.text(ANSWER.country);
 
   $answerInput.focus();
+
+  // Show map of the country in question
+  replaceMapQuery(ANSWER['country']); 
 }
 
-function insertAnswerDOM(input, answer, isCorrect) {
+function insertAnswerDOM(input, answer, isCorrect, index = null) {
   var element = null;
   if (isCorrect) {
     element = $(
-      '<tr class="history correct"><td>' +
+      '<tr class="history correct"><td class="country">' +
         answer.country +
         '</td><td class="capital">' +
         input +
@@ -115,7 +144,7 @@ function insertAnswerDOM(input, answer, isCorrect) {
     );
   } else {
     element = $(
-      '<tr class="history incorrect"><td>' +
+      '<tr class="history incorrect"><td class="country">' +
         answer.country +
         '</td><td class="capital">' +
         input +
@@ -125,9 +154,15 @@ function insertAnswerDOM(input, answer, isCorrect) {
     );
   }
 
+  var inputIndex = index;
+  if (!inputIndex) {
+    inputIndex = INDEX;
+    INDEX++;
+  }
+
   $(element)
     .find(".delete")
-    .data("id", INDEX)
+    .data("key", inputIndex)
     .on("click", function(evt) {
       for (var x = 0; x < HISTORY.length; x++) {
         if (HISTORY[x].id === $(this).data("id")) {
@@ -135,9 +170,19 @@ function insertAnswerDOM(input, answer, isCorrect) {
           HISTORY.splice(x, 1);
         }
       }
+      Object.keys(HISTORY).forEach(function(key) {
+        var historyItem = HISTORY[key];
+        if (key === $(this).data("key")) {
+          $(element).remove();
+          HISTORY.splice(x, 1);
+        }
+      });
     });
 
-  INDEX++;
+  $(element).find(".country").on("click", function(evt) {
+    replaceMapQuery(answer.country);
+  });
+
   element.insertAfter("#radioRow");
 }
 
@@ -160,14 +205,16 @@ function changeHistoryType(type) {
         insertAnswerDOM(
           historyElement.input,
           historyElement.answer,
-          historyElement.isCorrect
+          historyElement.isCorrect,
+          historyElement.id
         );
       }
     } else {
       insertAnswerDOM(
         historyElement.input,
         historyElement.answer,
-        historyElement.isCorrect
+        historyElement.isCorrect,
+        historyElement.id
       );
     }
   }
@@ -193,4 +240,10 @@ function convertCSVtoObject(csvData) {
     result.push(item);
   }
   return result;
+}
+
+function replaceMapQuery(country) {
+  var $map = $('#pr3__map');
+  var originalUrl = $map.attr('src');
+  $map.attr("src", originalUrl.replace(/q=.+?(?=&|$)/, "q=" + country));
 }
