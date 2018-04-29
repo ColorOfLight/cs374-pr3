@@ -85,6 +85,23 @@ function initFuncs() {
       }
     });
 
+    $("#pr3__clear").on("click", function(evt) {
+      Object.keys(HISTORY).forEach(function(key) {
+        var historyItem = HISTORY[key];
+        if (!historyItem.isDeleted) {
+          historyItem["isDeleted"] = true;
+          var updates = {};
+          updates["/history/" + key] = historyItem;
+          firebase
+            .database()
+            .ref()
+            .update(updates);
+        }
+      });
+      $(".history").remove();
+      $("#radioRow input[value='all']").click();
+    });
+
     $questionColumn.on("click", function(evt) {
       replaceMapQuery($(evt.currentTarget).text());
     });
