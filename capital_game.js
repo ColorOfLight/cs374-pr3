@@ -33,11 +33,8 @@ function initFirebase() {
   var historyRef = database.ref('history');
 
   historyRef.once("value").then(function(snapshot) {
-<<<<<<< HEAD
     var historyObject = snapshot.val();
     HISTORY = historyObject;
-=======
->>>>>>> 2a8c3802d5742519387e47202c7488c04478400e
     Object.keys(HISTORY).forEach(function(key) {
       var historyItem = HISTORY[key];
       if (!historyItem.isDeleted) {
@@ -45,14 +42,6 @@ function initFirebase() {
       }
     });
   });
-<<<<<<< HEAD
-=======
-
-  historyRef.on('value', function (snapshot) {
-    var historyObject = snapshot.val()
-    HISTORY = historyObject;
-  });
->>>>>>> 2a8c3802d5742519387e47202c7488c04478400e
 }
 
 //= Run code when document is ready
@@ -183,16 +172,6 @@ function insertAnswerDOM(input, answer, isCorrect, index = null) {
           firebase.database().ref().update(updates);
           $(element).remove();
         }
-<<<<<<< HEAD
-=======
-      }
-      Object.keys(HISTORY).forEach(function(key) {
-        var historyItem = HISTORY[key];
-        if (key === $(this).data("key")) {
-          $(element).remove();
-          HISTORY.splice(x, 1);
-        }
->>>>>>> 2a8c3802d5742519387e47202c7488c04478400e
       });
     });
 
@@ -207,7 +186,6 @@ function changeHistoryType(type) {
   HISTORY_TYPE = type;
   $(".history").remove();
 
-<<<<<<< HEAD
   Object.keys(HISTORY).forEach(function(key) {
     var historyItem = HISTORY[key];
     if (!historyItem.isDeleted) {
@@ -222,65 +200,8 @@ function changeHistoryType(type) {
       } else {
         insertAnswerDOM(historyItem.input, historyItem.answer, historyItem.isCorrect, key);
       }
-=======
-  for (var x = 0; x < HISTORY.length; x++) {
-    var historyElement = HISTORY[x];
-    if (HISTORY_TYPE === "correct") {
-      if (historyElement.isCorrect) {
-        insertAnswerDOM(
-          historyElement.input,
-          historyElement.answer,
-          historyElement.isCorrect
-        );
-      }
-    } else if (HISTORY_TYPE === "wrong") {
-      if (!historyElement.isCorrect) {
-        insertAnswerDOM(
-          historyElement.input,
-          historyElement.answer,
-          historyElement.isCorrect,
-          historyElement.id
-        );
-      }
-    } else {
-      insertAnswerDOM(
-        historyElement.input,
-        historyElement.answer,
-        historyElement.isCorrect,
-        historyElement.id
-      );
->>>>>>> 2a8c3802d5742519387e47202c7488c04478400e
     }
   });
-
-  // for (var x = 0; x < HISTORY.length; x++) {
-  //   var historyElement = HISTORY[x];
-  //   if (HISTORY_TYPE === "correct") {
-  //     if (historyElement.isCorrect) {
-  //       insertAnswerDOM(
-  //         historyElement.input,
-  //         historyElement.answer,
-  //         historyElement.isCorrect
-  //       );
-  //     }
-  //   } else if (HISTORY_TYPE === "wrong") {
-  //     if (!historyElement.isCorrect) {
-  //       insertAnswerDOM(
-  //         historyElement.input,
-  //         historyElement.answer,
-  //         historyElement.isCorrect,
-  //         historyElement.id
-  //       );
-  //     }
-  //   } else {
-  //     insertAnswerDOM(
-  //       historyElement.input,
-  //       historyElement.answer,
-  //       historyElement.isCorrect,
-  //       historyElement.id
-  //     );
-  //   }
-  // }
 }
 
 function convertCSVtoObject(csvData) {
