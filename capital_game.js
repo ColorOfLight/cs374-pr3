@@ -44,6 +44,7 @@ function initFirebase() {
           insertAnswerDOM(historyItem.input, historyItem.answer, historyItem.isCorrect, key);
         }
       });
+      toggleClearDisabled();
     } else {
       HISTORY = {};
     }
@@ -51,6 +52,9 @@ function initFirebase() {
   actionsRef.once("value").then(function (snapshot) {
     var actionsObject = snapshot.val();
     ACTIONS = actionsObject ? actionsObject : {};
+    if (!isObjectEmpty(ACTIONS)) {
+      $("#pr3__undo").attr("disabled", false);
+    }
   });
 }
 
@@ -61,8 +65,14 @@ function initFuncs() {
     var $questionColumn = $("#pr2__question");
     var $answerInput = $("#pr2__answer");
     var $submitButton = $("#pr2__submit");
+    var $undoButton = $("#pr3__undo");
 
     resetInputRow();
+
+    if (isObjectEmpty(ACTIONS)) {
+      $undoButton.attr('disabled', true);
+    }
+    toggleClearDisabled();
 
     $answerInput.autocomplete({ source: function(request, response) {
         var capitals = pairs.map(function(obj) {
@@ -112,6 +122,7 @@ function initFuncs() {
       $(".history").remove();
       addNewAction('remove', historyKeys);
       $("#radioRow input[value='all']").click();
+      toggleClearDisabled();
     });
 
     $("#pr3__undo").on("click", function(evt) {
@@ -125,10 +136,10 @@ function initFuncs() {
         history: null,
         actions: null
       });
-      // firebase.database().ref('/history').update(null);
-      // firebase.database().ref('/actions').update(null);
       $("#radioRow input[value='all']").click();
       $('.history').remove();
+      $("#pr3__undo").attr('disabled', true);
+      $("#pr3__clear").attr('disabled', true);
     });
 
     $questionColumn.on("click", function(evt) {
@@ -151,6 +162,7 @@ function checkAnswer(input) {
   var newPostKey = firebase.database().ref().child('history').push(historyItem).key;
   HISTORY[newPostKey] = historyItem;
   insertAnswerDOM(input, ANSWER, isCorrect, newPostKey);
+  toggleClearDisabled();
 
   addNewAction('add', [newPostKey]);
 
@@ -283,6 +295,9 @@ function addNewAction(actionType, keys) {
   }
   var newPostKey = firebase.database().ref().child('actions').push(actionItem).key;
   ACTIONS[newPostKey] = actionItem;
+  if ($("#pr3__undo").attr('disabled')) {
+    $("#pr3__undo").attr('disabled', false);
+  }
 }
 
 function undoLastAction() {
@@ -333,6 +348,10 @@ function undoLastAction() {
   }
   delete ACTIONS[lastActionKey];
   firebase.database().ref().child('actions/' + lastActionKey).remove();
+  if (isObjectEmpty(ACTIONS)) {
+    $("#pr3__undo").attr('disabled', true);
+  }
+  toggleClearDisabled();
 }
 
 function toggleHistoryType(historyItem) {
@@ -340,5 +359,29 @@ function toggleHistoryType(historyItem) {
     $("#radioRow input[value='all']").click();
   } else if (!historyItem.isCorrect && HISTORY_TYPE === "correct") {
     $("#radioRow input[value='all']").click();
+  }
+}
+
+function isObjectEmpty(obj) {
+  return Object.keys(obj).length === 0 && obj.constructor === Object;
+}
+
+function toggleClearDisabled() {
+  var $clearButton = $("#pr3__clear");
+  var historyLength = 0;
+  if (!isObjectEmpty(HISTORY)) {
+    var historyLength = Object.keys(HISTORY).reduce(function(accumlator, currentKey) {
+      if (!HISTORY[currentKey].isDeleted) {
+        return accumlator + 1;
+      } else {
+        return accumlator;
+      }
+    }, 0);
+  }
+
+  if (historyLength > 0) {
+    $clearButton.attr("disabled", false);
+  } else {
+    $clearButton.attr("disabled", true);
   }
 }
