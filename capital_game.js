@@ -3,7 +3,8 @@
 
 //= Global Varaibles
 var ANSWER = null;
-var HISTORY = [];
+var HISTORY = {};
+var ACTIONS = {};
 var HISTORY_TYPE = "all";
 var INDEX = 0;
 
@@ -31,16 +32,25 @@ function initFirebase() {
   var database = firebase.database();
 
   var historyRef = database.ref('history');
+  var actionsRef = database.ref('actions');
 
   historyRef.once("value").then(function(snapshot) {
     var historyObject = snapshot.val();
-    HISTORY = historyObject;
-    Object.keys(HISTORY).forEach(function(key) {
-      var historyItem = HISTORY[key];
-      if (!historyItem.isDeleted) {
-        insertAnswerDOM(historyItem.input, historyItem.answer, historyItem.isCorrect, key);
-      }
-    });
+    if (historyObject) {
+      HISTORY = historyObject;
+      Object.keys(HISTORY).forEach(function (key) {
+        var historyItem = HISTORY[key];
+        if (!historyItem.isDeleted) {
+          insertAnswerDOM(historyItem.input, historyItem.answer, historyItem.isCorrect, key);
+        }
+      });
+    } else {
+      HISTORY = {};
+    }
+  });
+  actionsRef.once("value").then(function (snapshot) {
+    var actionsObject = snapshot.val();
+    ACTIONS = actionsObject ? actionsObject : {};
   });
 }
 
@@ -86,7 +96,8 @@ function initFuncs() {
     });
 
     $("#pr3__clear").on("click", function(evt) {
-      Object.keys(HISTORY).forEach(function(key) {
+      var historyKeys = Object.keys(HISTORY);
+      historyKeys.forEach(function(key) {
         var historyItem = HISTORY[key];
         if (!historyItem.isDeleted) {
           historyItem["isDeleted"] = true;
@@ -99,7 +110,25 @@ function initFuncs() {
         }
       });
       $(".history").remove();
+      addNewAction('remove', historyKeys);
       $("#radioRow input[value='all']").click();
+    });
+
+    $("#pr3__undo").on("click", function(evt) {
+      undoLastAction();
+    })
+
+    $("#pr3__reset").on("click", function(evt) {
+      HISTORY = {};
+      ACTIONS = {};
+      firebase.database().ref().update({
+        history: null,
+        actions: null
+      });
+      // firebase.database().ref('/history').update(null);
+      // firebase.database().ref('/actions').update(null);
+      $("#radioRow input[value='all']").click();
+      $('.history').remove();
     });
 
     $questionColumn.on("click", function(evt) {
@@ -111,22 +140,19 @@ function initFuncs() {
 //= Functions
 function checkAnswer(input) {
   var isCorrect = input === ANSWER.capital;
-
-  if (isCorrect && HISTORY_TYPE === "wrong") {
-    $("#radioRow input[value='all']").click();
-  } else if (!isCorrect && HISTORY_TYPE === "correct") {
-    $("#radioRow input[value='all']").click();
-  }
-
   var historyItem = {
     answer: ANSWER,
     input: input,
     isCorrect: isCorrect,
     isDeleted: false
   }
+  toggleHistoryType(historyItem);
+
   var newPostKey = firebase.database().ref().child('history').push(historyItem).key;
   HISTORY[newPostKey] = historyItem;
   insertAnswerDOM(input, ANSWER, isCorrect, newPostKey);
+
+  addNewAction('add', [newPostKey]);
 
   resetInputRow();
 }
@@ -188,6 +214,7 @@ function insertAnswerDOM(input, answer, isCorrect, index = null) {
           updates['/history/' + key] = historyItem;
           firebase.database().ref().update(updates);
           $(element).remove();
+          addNewAction('remove', [key]);
         }
       });
     });
@@ -247,4 +274,71 @@ function replaceMapQuery(country) {
   var $map = $('#pr3__map');
   var originalUrl = $map.attr('src');
   $map.attr("src", originalUrl.replace(/q=.+?(?=&|$)/, "q=" + country));
+}
+
+function addNewAction(actionType, keys) {
+  var actionItem = {
+    type: actionType,
+    keys: keys
+  }
+  var newPostKey = firebase.database().ref().child('actions').push(actionItem).key;
+  ACTIONS[newPostKey] = actionItem;
+}
+
+function undoLastAction() {
+  var lastActionKey = Object.keys(ACTIONS).reduce(function (a, b) {
+    return a > b ? a : b
+  });
+  var action = ACTIONS[lastActionKey];
+  
+  if (action.type === 'add') {
+    var historyKeys = action.keys;
+    if (historyKeys.length > 1) {
+      $("#radioRow input[value='all']").click();
+    }
+    $('.delete').each(function (idx, ele) {
+      var $ele = $(ele);
+      if (historyKeys.indexOf($ele.data('key')) >= 0) {
+        $ele.parents('tr').remove();
+      }
+    });
+    for (var i = 0; i < historyKeys.length; i++) {
+      var historyKey = historyKeys[i];
+      var historyItem = HISTORY[historyKey];
+      delete HISTORY[historyKey];
+      toggleHistoryType(historyItem);
+      firebase
+        .database()
+        .ref('/history/' + historyKey)
+        .remove();
+    }
+  } else if (action.type === 'remove') {
+    var historyKeys = action.keys;
+    if (historyKeys.length > 1) {
+      $("#radioRow input[value='all']").click();
+    }
+    for (var i = 0; i < historyKeys.length; i++) {
+      var historyKey = historyKeys[i];
+      var historyItem = HISTORY[historyKey];
+      toggleHistoryType(historyItem);
+      historyItem.isDeleted = false;
+      insertAnswerDOM(historyItem.input, historyItem.answer, historyItem.isCorrect, historyKey);
+      var updates = {};
+      updates["/history/" + historyKey] = historyItem;
+      firebase
+        .database()
+        .ref()
+        .update(updates);
+    }
+  }
+  delete ACTIONS[lastActionKey];
+  firebase.database().ref().child('actions/' + lastActionKey).remove();
+}
+
+function toggleHistoryType(historyItem) {
+  if (historyItem.isCorrect && HISTORY_TYPE === "wrong") {
+    $("#radioRow input[value='all']").click();
+  } else if (!historyItem.isCorrect && HISTORY_TYPE === "correct") {
+    $("#radioRow input[value='all']").click();
+  }
 }
