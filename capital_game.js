@@ -106,7 +106,7 @@ function initFuncs() {
     });
 
     $("#pr3__clear").on("click", function(evt) {
-      var historyKeys = Object.keys(HISTORY);
+      var historyKeys = Object.keys(HISTORY).filter(function(key) { return !HISTORY[key].isDeleted });
       historyKeys.forEach(function(key) {
         var historyItem = HISTORY[key];
         if (!historyItem.isDeleted) {
@@ -337,7 +337,7 @@ function undoLastAction() {
       var historyItem = HISTORY[historyKey];
       toggleHistoryType(historyItem);
       historyItem.isDeleted = false;
-      insertAnswerDOM(historyItem.input, historyItem.answer, historyItem.isCorrect, historyKey);
+      changeHistoryType(HISTORY_TYPE); // reset the table
       var updates = {};
       updates["/history/" + historyKey] = historyItem;
       firebase
