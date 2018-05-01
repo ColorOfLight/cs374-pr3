@@ -44,3 +44,7 @@ td {
 .incorrect .capital {
     text-decoration: line-through;
 }
+
+.country:hover {
+    cursor: pointer;
+}

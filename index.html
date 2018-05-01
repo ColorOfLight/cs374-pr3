@@ -12,6 +12,8 @@
     <!--Your HTML here-->
     <main>
       <h1>Do you know the capital of this country?</h1>
+      <iframe id="pr3__map" width="500" height="400" frameborder="0" style="border:0" src="https://www.google.com/maps/embed/v1/place?key=AIzaSyDrnT4jP2ZxiZ6ByOSbpXHJQw0yW1Tzljc&maptype=satellite&q=Korea" allowfullscreen>
+      </iframe>
       <table>
         <tr>
           <th>Country</th>
@@ -19,7 +21,7 @@
           <th>Answer</th>
         </tr>
         <tr>
-          <td id="pr2__question">Loading...</td>
+          <td class="country" id="pr2__question">Loading...</td>
           <td>
             <input id="pr2__answer" type="text" />
           </td>
@@ -32,6 +34,11 @@
             <input type="radio" name="history_type" value="all" checked /> All
             <input type="radio" name="history_type" value="correct" /> Correct Only
             <input type="radio" name="history_type" value="wrong" /> Wrong Only
+            <div class="button-wrapper">
+              <button id="pr3__undo">Undo</button>
+              <button id="pr3__clear">Clear</button>
+              <button id="pr3__reset">Reset</button>
+            </div>
           </td>
         </tr>
       </table>
@@ -39,8 +46,20 @@
 
     <script src="jquery/js/jquery-1.9.0.min.js"></script>
     <script src="jquery/js/jquery-ui-1.10.0.custom.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/3.6.2/firebase.js"></script>
-    <script src="./country_capital_pairs.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
+    <script>
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyBJZgdDdzJAJZ8EUJKysHKkAPnoe-iNCak",
+        authDomain: "cs374-pr3-e16e5.firebaseapp.com",
+        databaseURL: "https://cs374-pr3-e16e5.firebaseio.com",
+        projectId: "cs374-pr3-e16e5",
+        storageBucket: "",
+        messagingSenderId: "1054879638971"
+      };
+      firebase.initializeApp(config);
+    </script>
+    <!-- <script src="./country_capital_pairs.js"></script> -->
     <script src="./capital_game.js"></script>
   </body>
 </html>
